@@ -1,0 +1,40 @@
+name: Build Unsigned IPA
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Build Unsigned IPA (Skip Signing)
+        run: |
+          cd Anonycord-1.2
+          xcodebuild clean build \
+            -project Anonycord.xcodeproj \
+            -scheme Anonycord \
+            -sdk iphoneos \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO \
+            INFOPLIST_FILE=Anonycord/Info.plist \
+            -derivedDataPath build/
+
+          mkdir -p Payload
+          cp -r build/Build/Products/Release-iphoneos/*.app Payload/
+          zip -r Anonycord.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Anonycord.ipa
+          path: Anonycord-1.2/Anonycord.ipa
